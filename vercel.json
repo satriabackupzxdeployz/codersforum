@@ -1,0 +1,47 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "api/core.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "public/**/*",
+      "use": "@vercel/static"
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/api/core",
+      "destination": "/api/core.js"
+    },
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/core.js"
+    },
+    {
+      "source": "/home",
+      "destination": "/public/home.html"
+    },
+    {
+      "source": "/profile",
+      "destination": "/public/home.html"
+    },
+    {
+      "source": "/search",
+      "destination": "/public/home.html"
+    },
+    {
+      "source": "/user",
+      "destination": "/public/home.html"
+    },
+    {
+      "source": "/",
+      "destination": "/public/index.html"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/public/$1"
+    }
+  ]
+}
