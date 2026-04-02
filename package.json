@@ -1,0 +1,13 @@
+{
+  "name": "coders",
+  "version": "1.0.0",
+  "description": "",
+  "main": "api/core.js",
+  "scripts": {
+    "start": "node api/core.js"
+  },
+  "dependencies": {
+    "firebase": "^10.8.0",
+    "node-fetch": "^2.7.0"
+  }
+}
