@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coders - Login</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="auth-body-container">
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <div class="logo">Coders</div>
+                <div class="tagline" id="formTagline">Masuk ke akun Anda</div>
+            </div>
+            <div class="auth-body">
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-input" id="loginEmail" autocomplete="off">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Password</label>
+                        <input type="password" class="form-input" id="loginPassword">
+                    </div>
+                    <button type="submit" class="submit-btn" id="loginBtn">Masuk</button>
+                    <button type="button" class="google-btn" id="googleBtn" style="margin-top: 15px;">
+                        <i class="fab fa-google"></i> Masuk dengan Google
+                    </button>
+                </form>
+                <form id="registerForm" style="display: none;">
+                    <div class="form-group">
+                        <label class="form-label">Username</label>
+                        <input type="text" class="form-input" id="regUsername" autocomplete="off">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-input" id="regEmail" autocomplete="off">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Password</label>
+                        <input type="password" class="form-input" id="regPassword">
+                    </div>
+                    <div class="captcha-container">
+                        <div class="slider-container" id="sliderContainer">
+                            <div class="slider-track" id="sliderTrack"></div>
+                            <div class="slider-thumb" id="sliderThumb"><i class="fas fa-arrow-right"></i></div>
+                            <div class="slider-text" id="sliderText">Geser untuk verifikasi</div>
+                        </div>
+                    </div>
+                    <button type="button" class="submit-btn" id="registerBtn" disabled>Daftar</button>
+                </form>
+                <div class="auth-toggle">
+                    <span id="toggleText">Belum punya akun? </span>
+                    <span class="toggle-link" id="toggleLink" onclick="toggleForm()">Daftar</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        if (localStorage.getItem('coders_uid')) {
+            window.location.href = '/home';
+        }
+
+        let isLogin = true;
+        let isVerified = false;
+        
+        function toggleForm() {
+            isLogin = !isLogin;
+            document.getElementById('loginForm').style.display = isLogin ? 'block' : 'none';
+            document.getElementById('registerForm').style.display = isLogin ? 'none' : 'block';
+            document.getElementById('formTagline').innerText = isLogin ? 'Masuk ke akun Anda' : 'Daftar Coders';
+            document.getElementById('toggleText').innerText = isLogin ? 'Belum punya akun? ' : 'Sudah punya akun? ';
+            document.getElementById('toggleLink').innerText = isLogin ? 'Daftar' : 'Masuk';
+        }
+
+        const thumb = document.getElementById('sliderThumb');
+        const track = document.getElementById('sliderTrack');
+        const container = document.getElementById('sliderContainer');
+        const text = document.getElementById('sliderText');
+        const regBtn = document.getElementById('registerBtn');
+        let isDragging = false;
+        let startX = 0;
+
+        thumb.addEventListener('mousedown', (e) => {
+            const u = document.getElementById('regUsername').value;
+            const em = document.getElementById('regEmail').value;
+            const p = document.getElementById('regPassword').value;
+            const regex = /^[a-zA-Z0-9_]{3,}$/;
+            
+            if(!u || !em || !p || p.length < 6 || !regex.test(u)) {
+                alert('Data tidak valid!');
+                return;
+            }
+            isDragging = true;
+            startX = e.clientX;
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            let move = e.clientX - startX;
+            let max = container.offsetWidth - thumb.offsetWidth;
+            if (move > 0 && move <= max) {
+                thumb.style.left = move + 'px';
+                track.style.width = (move / max) * 100 + '%';
+            }
+            if (move >= max) {
+                isVerified = true;
+                text.innerText = 'Terverifikasi';
+                regBtn.disabled = false;
+                isDragging = false;
+            }
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (isDragging && !isVerified) {
+                thumb.style.left = '0px';
+                track.style.width = '0%';
+            }
+            isDragging = false;
+        });
+
+        regBtn.addEventListener('click', async () => {
+            const data = {
+                username: document.getElementById('regUsername').value,
+                email: document.getElementById('regEmail').value,
+            };
+            const p = document.getElementById('regPassword').value;
+            
+            const res = await fetch('/api/core', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ service: 'db', action: 'register', data, email: data.email, password: p })
+            });
+            const out = await res.json();
+            if(out.success) {
+                localStorage.setItem('coders_uid', out.uid);
+                window.location.href = '/home';
+            } else {
+                alert('Gagal');
+            }
+        });
+
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const em = document.getElementById('loginEmail').value;
+            const p = document.getElementById('loginPassword').value;
+            const res = await fetch('/api/core', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ service: 'db', action: 'login', email: em, password: p })
+            });
+            const out = await res.json();
+            if(out.success) {
+                localStorage.setItem('coders_uid', out.user.uid);
+                window.location.href = '/home';
+            } else {
+                if(out.banned) alert('Banned');
+                else alert('Gagal');
+            }
+        });
+
+        document.getElementById('googleBtn').addEventListener('click', async () => {
+            const res = await fetch('/api/core', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ service: 'config' })
+            });
+            const out = await res.json();
+            if(out.success && out.googleClientId) {
+                window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${out.googleClientId}&redirect_uri=${window.location.origin}/home&response_type=token&scope=email profile`;
+            }
+        });
+    </script>
+</body>
+</html>
